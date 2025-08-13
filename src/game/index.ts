@@ -1,3 +1,4 @@
+import { Render } from './render';
 import { createRandomInt } from './utils';
 import {
   Validator,
@@ -7,21 +8,17 @@ import {
   type TTable,
 } from './validator';
 
-type TElementsTableRow = HTMLSpanElement[];
-type TElementsTable = TElementsTableRow[];
-
 export class Game {
-  private elementsTable: TElementsTable;
   private selectedCell: TPosition | null;
   private table: TTable;
   private easeLevel: number;
+  private render: Render;
 
   constructor(private container: Element) {
     document.addEventListener('click', () => {
       this.resetSelectedCell();
     });
 
-    this.elementsTable = [];
     this.table = [];
     this.selectedCell = null;
     this.easeLevel = 40;
@@ -31,6 +28,14 @@ export class Game {
     while (!isValuesCreated) {
       isValuesCreated = this.createValues();
     }
+
+    this.render = new Render({
+      container: this.container,
+      restart: this.restart.bind(this),
+      onSelectCell: this.handleSelectCell.bind(this),
+      setValue: this.setValue.bind(this),
+      table: this.table,
+    });
   }
 
   private createValues(): boolean {
@@ -115,10 +120,7 @@ export class Game {
   }
 
   private resetSelectedCell() {
-    if (this.selectedCell)
-      this.elementsTable[this.selectedCell.y][
-        this.selectedCell.x
-      ].classList.remove('selected');
+    if (this.selectedCell) this.render.unselectCell(this.selectedCell);
 
     this.selectedCell = null;
   }
@@ -127,89 +129,12 @@ export class Game {
     return this.table[y][x];
   }
 
-  private getElement({ y, x }: TPosition): HTMLSpanElement {
-    return this.elementsTable[y][x];
-  }
-
-  private handleSelectCell(x: number, y: number) {
+  private handleSelectCell(position: TPosition) {
     this.resetSelectedCell();
-    if (!this.getCell({ x, y }).isEditable) return;
+    if (!this.getCell(position).isEditable) return;
 
-    this.selectedCell = { x, y };
-
-    this.getElement({ x, y }).classList.add('selected');
-  }
-
-  public renderElements() {
-    // Table
-    const tableElement = document.createElement('div');
-    tableElement.className = 'table';
-
-    for (let y = 0; y < this.table.length; y++) {
-      const row: TElementsTableRow = [];
-      const lineElement = document.createElement('div');
-      lineElement.classList = 'row';
-      tableElement.appendChild(lineElement);
-
-      for (let x = 0; x < this.table[y].length; x++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        const span = document.createElement('span');
-        span.addEventListener('click', (event) => {
-          event.stopPropagation();
-          this.handleSelectCell(x, y);
-        });
-        cell.appendChild(span);
-        lineElement.appendChild(cell);
-        row.push(span);
-      }
-      this.elementsTable.push(row);
-    }
-
-    this.container.appendChild(tableElement);
-
-    // Buttons
-    const buttonsContainer = document.createElement('div');
-    buttonsContainer.className = 'buttons';
-    const numbersContainer = document.createElement('div');
-    numbersContainer.className = 'numbers';
-
-    for (let number = 1; number <= 9; number++) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.innerText = number.toString();
-      button.addEventListener('click', () => {
-        this.setValue(number);
-      });
-      numbersContainer.appendChild(button);
-    }
-
-    buttonsContainer.appendChild(numbersContainer);
-
-    const optionsContainer = document.createElement('div');
-    optionsContainer.className = 'options';
-
-    const clearButton = document.createElement('button');
-    clearButton.type = 'button';
-    clearButton.innerText = 'Limpar';
-    clearButton.addEventListener('click', () => {
-      this.setValue(null);
-    });
-
-    optionsContainer.appendChild(clearButton);
-
-    const restartButton = document.createElement('button');
-    restartButton.type = 'button';
-    restartButton.innerText = 'Reiniciar';
-    restartButton.addEventListener('click', () => {
-      this.restart();
-    });
-
-    optionsContainer.appendChild(restartButton);
-
-    buttonsContainer.appendChild(optionsContainer);
-
-    this.container.appendChild(buttonsContainer);
+    this.selectedCell = position;
+    this.render.selectCell(position);
   }
 
   private setValue(value: number | null) {
@@ -224,29 +149,18 @@ export class Game {
       value !== null &&
       !validator.check(selectedCellPosition, value)
     ) {
-      this.getElement(selectedCellPosition).classList.add('invalidValue');
+      this.render.makeCellInvalid(selectedCellPosition);
       this.getCell(selectedCellPosition).isEditable = false;
       setTimeout(() => {
-        this.getElement(selectedCellPosition).classList.remove('invalidValue');
+        this.render.makeCellValid(selectedCellPosition);
         this.getCell(selectedCellPosition).value = null;
         this.getCell(selectedCellPosition).isEditable = true;
-        this.getElement(selectedCellPosition).innerText = '';
+        this.render.writeValue(selectedCellPosition, '');
       }, 1500);
     }
 
     this.getCell(selectedCellPosition).value = value;
-    this.getElement(selectedCellPosition).innerText = value?.toString() ?? '';
-  }
-
-  public renderValues() {
-    this.table.forEach((line, y) => {
-      line.forEach((cell, x) => {
-        this.elementsTable[y][x].innerText = cell.value?.toString() ?? '';
-        if (!cell.isEditable)
-          this.elementsTable[y][x].classList.add('isNotEditable');
-        else this.elementsTable[y][x].classList.remove('isNotEditable');
-      });
-    });
+    this.render.writeValue(selectedCellPosition, value?.toString() ?? '');
   }
 
   public restart() {
@@ -256,11 +170,12 @@ export class Game {
       isValuesCreated = this.createValues();
     }
 
-    this.renderValues();
+    this.render.writeAllValues(this.table);
   }
 
+  public stop() {}
+
   public start() {
-    this.renderElements();
-    this.renderValues();
+    this.render.execute();
   }
 }
