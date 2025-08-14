@@ -93,7 +93,6 @@ export class Render {
         span.addEventListener('click', (event) => {
           event.stopPropagation();
           this.onSelectCell({ x, y });
-          this.selectCell({ x, y });
         });
         cell.appendChild(span);
         lineElement.appendChild(cell);
