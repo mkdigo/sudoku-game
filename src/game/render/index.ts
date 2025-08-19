@@ -13,6 +13,18 @@ type Props = {
   onSelectCell: (position: TPosition) => void;
 };
 
+type TRenderModalProps = {
+  modalId: string;
+  title: string;
+  text: string;
+  cancelButtonText?: string;
+  cancelButtonShow?: boolean;
+  onCancel?: () => void;
+  confirmButtonText?: string;
+  confirmButtonShow?: boolean;
+  onConfirm: () => void;
+};
+
 export class Render {
   private container: Element;
   private table: TTable;
@@ -73,6 +85,78 @@ export class Render {
 
   public destroy() {
     this.container.innerHTML = '';
+  }
+
+  private renderModal({
+    modalId,
+    title,
+    text,
+    cancelButtonText = 'Não',
+    cancelButtonShow = true,
+    onCancel,
+    confirmButtonText = 'Sim',
+    confirmButtonShow = true,
+    onConfirm,
+  }: TRenderModalProps) {
+    const modalContainer = document.createElement('div');
+    modalContainer.className = 'modal';
+    modalContainer.id = modalId;
+
+    const contentContainer = document.createElement('div');
+
+    const header = document.createElement('h2');
+    header.innerText = title;
+
+    const innerContainer = document.createElement('div');
+
+    const textContainer = document.createElement('p');
+    textContainer.innerText = text;
+
+    const buttonsContainer = document.createElement('div');
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.classList = 'btn-danger';
+    cancelButton.innerText = cancelButtonText;
+    cancelButton.addEventListener(
+      'click',
+      onCancel
+        ? onCancel
+        : () => {
+            modalContainer.style.display = 'none';
+          }
+    );
+
+    const confirmButton = document.createElement('button');
+    confirmButton.type = 'button';
+    confirmButton.classList = 'btn-primary';
+    confirmButton.innerText = confirmButtonText;
+    confirmButton.addEventListener('click', () => {
+      onConfirm();
+      modalContainer.style.display = 'none';
+    });
+
+    if (cancelButtonShow) buttonsContainer.appendChild(cancelButton);
+    if (confirmButtonShow) buttonsContainer.appendChild(confirmButton);
+
+    innerContainer.appendChild(textContainer);
+    innerContainer.appendChild(buttonsContainer);
+
+    contentContainer.appendChild(header);
+    contentContainer.appendChild(innerContainer);
+
+    modalContainer.appendChild(contentContainer);
+
+    this.container.appendChild(modalContainer);
+  }
+
+  public openModal(id: string): boolean {
+    const modal = document.querySelector<HTMLDivElement>(`#${id}`);
+    if (modal) {
+      modal.style.display = 'flex';
+      return true;
+    }
+    return false;
   }
 
   public execute() {
@@ -137,7 +221,9 @@ export class Render {
     restartButton.type = 'button';
     restartButton.innerText = 'Reiniciar';
     restartButton.addEventListener('click', () => {
-      this.restart();
+      const restartModal =
+        document.querySelector<HTMLDivElement>('#restart-modal');
+      if (restartModal) restartModal.style.display = 'flex';
     });
 
     optionsContainer.appendChild(restartButton);
@@ -145,6 +231,26 @@ export class Render {
     buttonsContainer.appendChild(optionsContainer);
 
     this.container.appendChild(buttonsContainer);
+
+    // Modals
+    this.renderModal({
+      modalId: 'restart-modal',
+      title: 'Reiniciar Jogo',
+      text: 'Tem certeza que deseja começar um novo jogo?',
+      onConfirm: () => {
+        this.restart();
+      },
+    });
+
+    // Modals
+    this.renderModal({
+      modalId: 'win-modal',
+      title: 'Parabens, você conseguiu!!!',
+      text: 'Deseja começar um novo jogo?',
+      onConfirm: () => {
+        this.restart();
+      },
+    });
 
     this.writeAllValues();
   }

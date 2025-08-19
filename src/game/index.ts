@@ -21,7 +21,8 @@ export class Game {
 
     this.table = [];
     this.selectedCell = null;
-    this.easeLevel = 40;
+    // this.easeLevel = 40;
+    this.easeLevel = 79;
 
     let isValuesCreated = false;
 
@@ -142,25 +143,40 @@ export class Game {
     if (!this.getCell(this.selectedCell).isEditable) return;
     const selectedCellPosition = this.selectedCell;
 
-    const validator = new Validator(this.table);
+    this.render.writeValue(selectedCellPosition, value?.toString() ?? '');
 
-    if (
-      this.getCell(selectedCellPosition).value !== value &&
-      value !== null &&
-      !validator.check(selectedCellPosition, value)
-    ) {
-      this.render.makeCellInvalid(selectedCellPosition);
-      this.getCell(selectedCellPosition).isEditable = false;
-      setTimeout(() => {
-        this.render.makeCellValid(selectedCellPosition);
-        this.getCell(selectedCellPosition).value = null;
-        this.getCell(selectedCellPosition).isEditable = true;
-        this.render.writeValue(selectedCellPosition, '');
-      }, 1500);
+    if (value === null || value === this.getCell(selectedCellPosition).value)
+      return;
+
+    const validator = new Validator(this.table);
+    const isValidated = validator.check(selectedCellPosition, value);
+
+    if (isValidated) {
+      this.getCell(selectedCellPosition).value = value;
+      const validValuesAmount = this.table.reduce((prev, line) => {
+        const lineCount = line.reduce((prev, cell) => {
+          if (cell.value) return prev + 1;
+          return prev;
+        }, 0);
+        return prev + lineCount;
+      }, 0);
+
+      if (validValuesAmount === 81) this.win();
+      return;
     }
 
-    this.getCell(selectedCellPosition).value = value;
-    this.render.writeValue(selectedCellPosition, value?.toString() ?? '');
+    this.render.makeCellInvalid(selectedCellPosition);
+    this.getCell(selectedCellPosition).isEditable = false;
+    setTimeout(() => {
+      this.render.makeCellValid(selectedCellPosition);
+      this.getCell(selectedCellPosition).value = null;
+      this.getCell(selectedCellPosition).isEditable = true;
+      this.render.writeValue(selectedCellPosition, '');
+    }, 1500);
+  }
+
+  private win() {
+    this.render.openModal('win-modal');
   }
 
   public restart() {
