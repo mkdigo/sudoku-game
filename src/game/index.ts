@@ -21,8 +21,7 @@ export class Game {
 
     this.table = [];
     this.selectedCell = null;
-    // this.easeLevel = 40;
-    this.easeLevel = 79;
+    this.easeLevel = 40;
 
     let isValuesCreated = false;
 
@@ -176,7 +175,7 @@ export class Game {
   }
 
   private win() {
-    this.render.openModal('win-modal');
+    this.render.win();
   }
 
   public restart() {

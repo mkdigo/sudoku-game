@@ -1,0 +1,49 @@
+.modal {
+  position: fixed;
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+
+  & > div {
+    background: var(--color-background);
+    border-radius: var(--rounded);
+    overflow: hidden;
+    width: 100%;
+    max-width: 400px;
+
+    & > h2 {
+      background: var(--color-primary);
+      padding: 2rem 1rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    & > div {
+      display: flex;
+      flex-direction: column;
+
+      & > p {
+        padding: 1rem;
+        text-align: center;
+      }
+
+      & > div {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem;
+
+        button {
+          flex: 1;
+        }
+      }
+    }
+  }
+}
