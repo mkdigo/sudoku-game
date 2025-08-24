@@ -144,8 +144,12 @@ export class Game {
 
     this.render.writeValue(selectedCellPosition, value?.toString() ?? '');
 
-    if (value === null || value === this.getCell(selectedCellPosition).value)
+    if (value === this.getCell(selectedCellPosition).value) return;
+
+    if (value === null) {
+      this.getCell(selectedCellPosition).value = value;
       return;
+    }
 
     const validator = new Validator(this.table);
     const isValidated = validator.check(selectedCellPosition, value);
